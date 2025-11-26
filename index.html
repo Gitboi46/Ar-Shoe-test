@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MindAR — AR Shoes with Description</title>
+
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      body { margin:0; overflow:hidden; background:#000; font-family:Arial, sans-serif; }
+      #note, #markerStatus {
+        position:absolute; z-index:10; padding:10px 15px; border-radius:10px; color:white; font-weight:bold; font-size:14px;
+      }
+      #note { left:10px; top:10px; background:rgba(0,0,0,0.7); }
+      #markerStatus { right:10px; top:10px; background:rgba(200,0,0,0.8); transition:all 0.3s; }
+      #markerStatus.found { background:rgba(0,180,0,0.9); }
+
+      #controls {
+        position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:10;
+        background:rgba(0,0,0,0.85); padding:18px 22px; border-radius:15px; display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+      }
+      .shoe-btn {
+        width:110px; height:52px; background:#222; color:white; border:3px solid #555;
+        border-radius:10px; font-weight:bold; cursor:pointer; font-size:15px;
+        transition:all 0.3s;
+      }
+      .shoe-btn:hover { background:#333; border-color:#888; }
+      .shoe-btn.active { border:4px solid #4CAF50; background:#111; box-shadow:0 0 25px rgba(76,175,80,0.8); }
+      .info-btn {
+        width:38px; height:38px; background:rgba(255,255,255,0.3); border:2px solid white;
+        border-radius:50%; cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center;
+      }
+
+      #descOverlay {
+        position:absolute; inset:0; background:rgba(0,0,0,0.95); color:white; z-index:100;
+        display:none; flex-direction:column; justify-content:center; align-items:center; padding:20px; text-align:center;
+      }
+      #descOverlay.active { display:flex; }
+      #descOverlay h2 { margin:0 0 15px 0; font-size:28px; color:#4CAF50; }
+      #descOverlay p { font-size:18px; line-height:1.6; max-width:90%; margin:15px 0; }
+      #closeDesc { margin-top:30px; padding:14px 40px; background:#4CAF50; border:none; border-radius:10px;
+        color:white; font-size:18px; font-weight:bold; cursor:pointer; }
+    </style>
+  </head>
+  <body>
+
+    <div id="note">Point camera at the marker</div>
+    <div id="markerStatus">Target Not Found</div>
+
+    <div id="controls">
+      <button class="shoe-btn active" data-model="#shoe1">Casuals</button>
+      <button class="info-btn" data-desc="casual">i</button>
+
+      <button class="shoe-btn" data-model="#shoe2">Formals</button>
+      <button class="info-btn" data-desc="formal">i</button>
+
+      <button class="shoe-btn" data-model="#shoe3">Trekking</button>
+      <button class="info-btn" data-desc="trek">i</button>
+    </div>
+
+    <div id="descOverlay">
+      <h2 id="descTitle">Casual Sneakers</h2>
+      <p id="descText">Lightweight and breathable sneakers designed for all-day comfort. Perfect for casual outings, walking, or daily wear. Features cushioned insole and flexible rubber sole.</p>
+      <button id="closeDesc">Close</button>
+    </div>
+
+    <a-scene
+      mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/ElwinRoy/ar-business-card/targets%20(1).mind; filterMinCF:0.0001; filterBeta:0.001;"
+      color-space="sRGB" renderer="colorManagement: true" vr-mode-ui="enabled: false">
+
+      <a-assets timeout="60000">
+        <a-asset-item id="shoe1" src="https://raw.githubusercontent.com/ElwinRoy/test/main/Shoe%2001%20(1).glb"></a-asset-item>
+        <a-asset-item id="shoe2" src="https://raw.githubusercontent.com/ElwinRoy/test/main/Shoe%2002%20(1).glb"></a-asset-item>
+        <a-asset-item id="shoe3" src="https://raw.githubusercontent.com/ElwinRoy/test/main/Shoe%2003%20(1).glb"></a-asset-item>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-entity id="shoe-container" position="0 0.1 0" rotation="-90 0 0"></a-entity>
+      </a-entity>
+
+      <a-entity light="type: ambient; intensity: 0.8"></a-entity>
+      <a-entity light="type: directional; intensity: 1.2" position="2 4 2"></a-entity>
+    </a-scene>
+
+<script>
+  const container = document.getElementById('shoe-container');
+  const status = document.getElementById('markerStatus');
+  const overlay = document.getElementById('descOverlay');
+  const titleEl = document.getElementById('descTitle');
+  const textEl = document.getElementById('descText');
+  let currentModel = null;
+
+  const scales = { 
+    '#shoe1': '0.005 0.005 0.005', 
+    '#shoe2': '0.007 0.007 0.007', 
+    '#shoe3': '0.7 0.7 0.7' 
+  };
+  const offsets = { 
+    '#shoe1': '0 0 0', 
+    '#shoe2': '0 0 0', 
+    '#shoe3': '0 -0.05 0' 
+  };
+
+  const descriptions = {
+    casual: { 
+      title: "Casual Sneakers", 
+      text: "Lightweight and breathable sneakers designed for all-day comfort. Perfect for casual outings, walking, or daily wear. Features cushioned insole and flexible rubber sole." 
+    },
+    formal: { 
+      title: "Formal Leather Shoes", 
+      text: "Premium handcrafted leather shoes with polished finish. Ideal for business meetings, formal events, and office wear. Italian design with memory foam insole for superior comfort." 
+    },
+    trek: { 
+      title: "Trekking Boots", 
+      text: "Rugged, waterproof trekking boots built for adventure. Features ankle support, anti-slip Vibram sole, and breathable Gore-Tex membrane. Ready for mountains, trails, and rough terrain." 
+    }
+  };
+
+  function loadModel(id) {
+    if (currentModel) container.removeChild(currentModel);
+    const model = document.createElement('a-entity');
+    model.setAttribute('gltf-model', id);
+    model.setAttribute('scale', scales[id]);
+    model.setAttribute('position', offsets[id]);
+    model.setAttribute('rotation', '180 90 0');
+    model.setAttribute('animation-mixer', '');
+    container.appendChild(model);
+    currentModel = model;
+  }
+
+
+  document.querySelectorAll('.shoe-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.shoe-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadModel(btn.dataset.model);
+    });
+  });
+
+  document.querySelectorAll('.info-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const desc = descriptions[btn.dataset.desc];
+      titleEl.textContent = desc.title;
+      textEl.textContent = desc.text;
+      overlay.classList.add('active');
+    });
+  });
+
+  document.getElementById('closeDesc').addEventListener('click', () => {
+    overlay.classList.remove('active');
+  });
+  document.querySelector('a-scene').addEventListener('arReady', () => {
+    loadModel('#shoe1');
+  });
+
+  const anchor = document.querySelector('a-entity[mindar-image-target]');
+  const sceneEl = document.querySelector('a-scene');
+
+  let targetMatrix = new THREE.Matrix4();
+
+  sceneEl.addEventListener('targetFound', () => {
+    status.textContent = "Target Found – Smooth";
+    status.classList.add('found');
+    anchor.object3D.visible = true;
+  });
+
+  sceneEl.addEventListener('targetLost', () => {
+    status.textContent = "Target Lost";
+    status.classList.remove('found');
+    anchor.object3D.visible = false;
+  });
+
+  // Main smooth-follow loop
+  document.querySelector('a-scene').addEventListener('renderstart', () => {
+    const currentMatrix = new THREE.Matrix4();
+
+    const tick = () => {
+      if (anchor.components['mindar-image-target']?.isFound?.()) {
+        targetMatrix.copy(anchor.object3D.matrixWorld);
+      }
+
+      const lerpAmount = 1.85 ;
+
+      currentMatrix.copy(anchor.object3D.matrixWorld);
+      currentMatrix.lerp(targetMatrix, lerpAmount);
+
+      anchor.object3D.matrixWorld.copy(currentMatrix);
+      anchor.object3D.matrixWorld.decompose(
+        anchor.object3D.position,
+        anchor.object3D.quaternion,
+        anchor.object3D.scale
+      );
+
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+
+</script>
+  </body>
+</html>
