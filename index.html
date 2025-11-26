@@ -19,8 +19,15 @@
 
       #controls {
         position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:10;
-        background:rgba(0,0,0,0.85); padding:18px 22px; border-radius:15px; display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+        background:rgba(0,0,0,0.85); padding:18px 22px; border-radius:15px;
+        display:flex; gap:16px; justify-content:center;
+
+        /* ===== Added below to make buttons horizontal ===== */
+        flex-wrap: nowrap; 
+        white-space: nowrap;
+        overflow-x: auto;
       }
+
       .shoe-btn {
         width:110px; height:52px; background:#222; color:white; border:3px solid #555;
         border-radius:10px; font-weight:bold; cursor:pointer; font-size:15px;
@@ -132,7 +139,6 @@
     currentModel = model;
   }
 
-
   document.querySelectorAll('.shoe-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.shoe-btn').forEach(b => b.classList.remove('active'));
@@ -174,7 +180,6 @@
     anchor.object3D.visible = false;
   });
 
-  // Main smooth-follow loop
   document.querySelector('a-scene').addEventListener('renderstart', () => {
     const currentMatrix = new THREE.Matrix4();
 
